@@ -1,30 +1,35 @@
 from django.test import TestCase, Client
 from bs4 import BeautifulSoup
+from django.contrib.auth.models import User
 from .models import Post
 
 
 class TestView(TestCase):
     def setUp(self):
         self.client = Client()
+        self.user_trump = User.objects.create_user(username='trump',
+    password='somepassword')
+        self.user_woosung = User.objects.create_user(username='woosung',
+    password='somepassword')
 
 
 
-        def navbar_test(self, soup):
-            navbar = soup.nav
-            self.assertIn('Blog', navbar.text)
-            self.assertIn('About Me', navbar.text)
+    def navbar_test(self, soup):
+        navbar = soup.nav
+        self.assertIn('Blog', navbar.text)
+        self.assertIn('About Me', navbar.text)
 
-            logo_btn = navbar.find('a', text='스마트 부산')
-            self.assertEqual(logo_btn.attrs['href'], '/')
+        logo_btn = navbar.find('a', text='Smart Busan')
+        self.assertEqual(logo_btn.attrs['href'], '/')
 
-            home_btn = navbar.find('a', text='Home')
-            self.assertEqual(home_btn.attrs['href'], '/')
+        home_btn = navbar.find('a', text='Home')
+        self.assertEqual(home_btn.attrs['href'], '/')
 
-            blog_btn = navbar.find('a', text='Blog')
-            self.assertEqual(logo_btn.attrs['href'], '/blog/')
+        blog_btn = navbar.find('a', text='Blog')
+        self.assertEqual(blog_btn.attrs['href'], '/Blog/')
 
-            about_btn = navbar.find('a', text='About Me')
-            self.assertEqual(logo_btn.attrs['href'], '/about_me/')
+        about_btn = navbar.find('a', text='About Me')
+        self.assertEqual(about_btn.attrs['href'], '/About_me/')
 
 
 
@@ -34,7 +39,7 @@ class TestView(TestCase):
         response = self.client.get('/blog/')
         self.assertEqual(response.status_code, 200)
         soup = BeautifulSoup(response.content, 'html.parser')
-        self.assertEnaqual(soup.title.text, 'Blog')
+        self.assertEqual(soup.title.text, 'Blog')
 
         self.navbar_test(soup)
 
@@ -46,10 +51,12 @@ class TestView(TestCase):
         post_001 = Post.objects.create(
             title='첫 번째 포스트입니다.',
             content= 'Hello World. We are the world.',
+            author=self.user_trump
         )
         post_002 = Post.objects.create(
             title='두 번째 포스트입니다.',
             content='1등이 전부는 아니잖아요?',
+            author=self.user_woosung
         )
 
         self.assertEqual(Post.objects.count(), 2)
@@ -64,6 +71,9 @@ class TestView(TestCase):
 
 
         self.assertNotIn('아직 게시물이 없습니다', main_area.text)
+
+        self.assertIn(post_001.author.username.upper(), main_area.text)
+        self.assertIn(post_002.author.username.upper(), main_area.text)
 
 # Create your tests here.
 
